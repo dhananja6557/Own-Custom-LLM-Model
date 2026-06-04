@@ -6,12 +6,14 @@ from google.colab import drive
 drive.mount('/content/drive')
 
 ## ML Model with TP
+```bash
 import tensorflow as tf
 
 model_path = "/content/drive/MyDrive/my_model.h5"
 model = tf.keras.models.load_model(model_path)
 
 model.summary()
+```
 
 ## If you get errors while loading
 model = tf.keras.models.load_model("my_model.h5", compile=False)
