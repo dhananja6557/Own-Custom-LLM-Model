@@ -2,8 +2,10 @@
 Create and Train Own Custom LLM Model
 
 ## Load ML Model
+```bash
 from google.colab import drive
 drive.mount('/content/drive')
+```
 
 ## ML Model with TP
 ```bash
@@ -16,26 +18,34 @@ model.summary()
 ```
 
 ## If you get errors while loading
+```bash
 model = tf.keras.models.load_model("my_model.h5", compile=False)
+```
 
 ## If the model has custom layers or custom functions
+```bash
 model = tf.keras.models.load_model(
     "my_model.h5",
     custom_objects={
         "CustomLayerName": CustomLayerName
     }
 )
+```
 
 # Qwen2.5-Coder Retrain on Colab/Jupiter notebook
 
 ## Then check GPU:
-
+```bash
 !nvidia-smi
+```
 
 ## Install required packages
+```bash
 !pip install -U transformers accelerate datasets peft bitsandbytes trl safetensors
+```
 
 ## Load Qwen2.5-Coder-1.5B-Instruct
+```bash
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
@@ -48,8 +58,10 @@ model = AutoModelForCausalLM.from_pretrained(
     torch_dtype="auto",
     device_map="auto"
 )
+```
 
 ## Test the model
+```bash
 prompt = "Create a Python function to add two numbers."
 
 messages = [
@@ -86,8 +98,10 @@ response = tokenizer.decode(
 )
 
 print(response)
+```
 
 ## Create a training dataset
+```bash
 from datasets import Dataset
 
 training_data = [
@@ -163,16 +177,20 @@ function connectDatabase($host, $dbName, $username, $password) {
 dataset = Dataset.from_list(training_data)
 
 print(dataset)
+```
 
 ## Fine-tune using QLoRA
+```bash
 import gc
 import torch
 
 del model
 gc.collect()
 torch.cuda.empty_cache()
+```
 
 ## Load model in 4-bit
+```bash
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import LoraConfig, prepare_model_for_kbit_training
 import torch
@@ -198,8 +216,10 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 
 model = prepare_model_for_kbit_training(model)
+```
 
 ## Configure LoRA adapter
+```bash
 from peft import LoraConfig
 
 peft_config = LoraConfig(
@@ -210,8 +230,10 @@ peft_config = LoraConfig(
     task_type="CAUSAL_LM",
     target_modules="all-linear"
 )
+```
 
 ## Train with SFTTrainer
+```bash
 from trl import SFTTrainer, SFTConfig
 
 training_args = SFTConfig(
@@ -239,19 +261,25 @@ trainer = SFTTrainer(
 )
 
 trainer.train()
+```
 
 ## Save the tuned adapter
+```bash
 trainer.save_model("./qwen2_5_coder_1_5b_lora")
 tokenizer.save_pretrained("./qwen2_5_coder_1_5b_lora")
+```
 
 ## To save it to Google Drive
+```bash
 from google.colab import drive
 drive.mount('/content/drive')
 
 trainer.save_model("/content/drive/MyDrive/qwen2_5_coder_1_5b_lora")
 tokenizer.save_pretrained("/content/drive/MyDrive/qwen2_5_coder_1_5b_lora")
+```
 
 ## Use your fine-tuned model
+```bash
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
 import torch
@@ -276,23 +304,29 @@ base_model = AutoModelForCausalLM.from_pretrained(
 
 model = PeftModel.from_pretrained(base_model, adapter_path)
 model.eval()
+```
 
 ## Recommended training settings for Colab
 ### For T4 GPU
+```bash
 per_device_train_batch_size=1
 gradient_accumulation_steps=4
 max_length=512 or 1024
 num_train_epochs=2 or 3
 learning_rate=2e-4
+```
 
 ### For better GPU like A100
+```bash
 per_device_train_batch_size=2
 gradient_accumulation_steps=8
 max_length=2048
 num_train_epochs=3
 learning_rate=1e-4
+```
 
 ## clear memory
+```bash
 import gc
 import torch
 
@@ -303,8 +337,10 @@ except:
 
 gc.collect()
 torch.cuda.empty_cache()
+```
 
 ## Load model using FP16, not BF16
+```bash
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import LoraConfig, prepare_model_for_kbit_training
 import torch
@@ -332,8 +368,10 @@ model = AutoModelForCausalLM.from_pretrained(
 
 model.config.use_cache = False
 model = prepare_model_for_kbit_training(model)
+```
 
 ## LoRA config
+```bash
 peft_config = LoraConfig(
     r=16,
     lora_alpha=32,
@@ -342,8 +380,10 @@ peft_config = LoraConfig(
     task_type="CAUSAL_LM",
     target_modules="all-linear"
 )
+```
 
 ## Use FP16 training and disable BF16
+```bash
 from trl import SFTTrainer, SFTConfig
 
 training_args = SFTConfig(
@@ -379,23 +419,31 @@ trainer = SFTTrainer(
 )
 
 trainer.train()
+```
 
 ## check your GPU
+```bash
 import torch
 
 print(torch.cuda.get_device_name(0))
 print("BF16 supported:", torch.cuda.is_bf16_supported())
+```
 
 ## If it says: BF16 supported: False
+```bash
 fp16=True
 bf16=False
+```
 
 # Start
 
 ## Install packages
+```bash
 !pip install -U transformers accelerate datasets peft bitsandbytes trl safetensors
+```
 
 ## Create sample dataset
+```bash
 from datasets import Dataset
 
 training_data = [
@@ -424,8 +472,10 @@ training_data = [
 
 dataset = Dataset.from_list(training_data)
 print(dataset)
+```
 
 ## Load Qwen in 4-bit and manually attach LoRA
+```bash
 import os
 import gc
 import torch
@@ -474,15 +524,15 @@ peft_config = LoraConfig(
 
 model = get_peft_model(model, peft_config)
 
-# Important: force trainable LoRA parameters to float32
-# This avoids BF16 gradient scaler errors in Colab.
 for name, param in model.named_parameters():
     if param.requires_grad:
         param.data = param.data.to(torch.float32)
 
 model.print_trainable_parameters()
+```
 
 ## Train without FP16/BF16 mixed precision
+```bash
 fp16=False
 bf16=False
 
@@ -521,22 +571,30 @@ trainer = SFTTrainer(
 )
 
 trainer.train()
+```
 
 ## Save trained adapter
+```bash
 trainer.save_model("./qwen2_5_coder_1_5b_lora")
 tokenizer.save_pretrained("./qwen2_5_coder_1_5b_lora")
+```
 
 ## Change local model folder name
+```bash
 trainer.save_model("./qwen2_5_coder_1_5b_lora")
 tokenizer.save_pretrained("./qwen2_5_coder_1_5b_lora")
+```
 
 ## Use own name
+```bash
 my_model_name = "./dhananja-coding-assistant"
 
 trainer.save_model(my_model_name)
 tokenizer.save_pretrained(my_model_name)
+```
 
 ## Save to Google Drive with your model name
+```bash
 from google.colab import drive
 drive.mount('/content/drive')
 
@@ -544,8 +602,10 @@ my_model_name = "/content/drive/MyDrive/dhananja-coding-assistant"
 
 trainer.save_model(my_model_name)
 tokenizer.save_pretrained(my_model_name)
+```
 
 ## Use tuned model from local folder
+```bash
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
 import torch
@@ -575,8 +635,10 @@ model = PeftModel.from_pretrained(
 )
 
 model.eval()
+```
 
 ## Test your tuned coding model
+```bash
 messages = [
     {
         "role": "system",
@@ -611,13 +673,17 @@ response = tokenizer.decode(
 )
 
 print(response)
+```
 
 ## Upload your model adapter to Hugging Face with custom name
+```bash
 from huggingface_hub import login
 
 login()
+``
 
 ## Then upload your adapter folder
+```bash
 from huggingface_hub import create_repo, upload_folder
 
 repo_id = "YOUR_HF_USERNAME/dhananja-coding-assistant"
@@ -633,11 +699,15 @@ upload_folder(
     repo_id=repo_id,
     repo_type="model"
 )
+```
 
 ## Hugging Face Hub supports uploading local folders to a model repository
+```bash
 repo_id = "aksd-dhananja/dhananja-coding-assistant"
+```
 
 ## Use your uploaded Hugging Face adapter
+```bash
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
 import torch
@@ -667,18 +737,24 @@ model = PeftModel.from_pretrained(
 )
 
 model.eval()
+```
 
 # Retrain/Tune
 
 ## Install packages in Colab
+```bash
 !pip install -U transformers accelerate datasets peft bitsandbytes trl safetensors huggingface_hub
+```
 
 ## Then
+```bash
 from huggingface_hub import login
 
 login(token="hf_TexAbFEcmJdgUFguNOrLGQMfrZJLvAzXsRVX")
+```
 
 ## Load The Stack with streaming
+```bash
 from datasets import load_dataset
 
 stack_stream = load_dataset(
@@ -692,8 +768,10 @@ stack_stream = load_dataset(
 sample = next(iter(stack_stream))
 print(sample.keys())
 print(sample["content"][:1000])
+```
 
 ## The dataset supports language-specific loading like
+```bash
 data_dir="data/python"
 data_dir="data/javascript"
 data_dir="data/php"
@@ -701,8 +779,10 @@ data_dir="data/sql"
 data_dir="data/typescript"
 data_dir="data/html"
 data_dir="data/css"
+```
 
 ## Create a small clean training dataset
+```bash
 from datasets import Dataset
 
 ALLOWED_LICENSES = {
@@ -785,8 +865,10 @@ train_dataset = build_stack_dataset("python", max_samples=2000)
 
 print(train_dataset)
 print(train_dataset[0]["text"][:1000])
+```
 
 ## Load Qwen2.5-Coder with QLoRA
+```bash
 import os
 import torch
 import gc
@@ -823,8 +905,10 @@ model = prepare_model_for_kbit_training(
     model,
     use_gradient_checkpointing=True
 )
+```
 
 ## Add LoRA adapter
+```bash
 peft_config = LoraConfig(
     r=16,
     lora_alpha=32,
@@ -835,15 +919,19 @@ peft_config = LoraConfig(
 )
 
 model = get_peft_model(model, peft_config)
+```
 
 # Avoid BF16/FP16 gradient issues in Colab
+```bash
 for name, param in model.named_parameters():
     if param.requires_grad:
         param.data = param.data.to(torch.float32)
 
 model.print_trainable_parameters()
+```
 
 ## Train on The Stack dataset
+```bash
 from trl import SFTTrainer, SFTConfig
 
 training_args = SFTConfig(
@@ -880,21 +968,27 @@ trainer = SFTTrainer(
 )
 
 trainer.train()
+```
 
 ## For a Colab T4 GPU, keep
+```bash
 max_length=512 or 1024
 per_device_train_batch_size=1
 gradient_accumulation_steps=4
 num_train_epochs=1
+```
 
 ## Save your trained adapter on Google Drive
+```bash
 from google.colab import drive
 drive.mount("/content/drive")
 
 trainer.save_model("/content/drive/MyDrive/qwen_stack_python_lora")
 tokenizer.save_pretrained("/content/drive/MyDrive/qwen_stack_python_lora")
+```
 
 ## Use trained Model
+```bash
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
 import torch
@@ -920,8 +1014,10 @@ base_model = AutoModelForCausalLM.from_pretrained(
 
 model = PeftModel.from_pretrained(base_model, adapter_path)
 model.eval()
+```
 
 ## Test it
+```bash
 messages = [
     {
         "role": "system",
@@ -956,19 +1052,25 @@ response = tokenizer.decode(
 )
 
 print(response)
+```
 
 # Train JavaScript
 
 ## Install packages
+```bash
 !pip install -U transformers accelerate datasets peft bitsandbytes trl safetensors huggingface_hub
+```
 
 ## Login to Hugging Face
+```bash
 from huggingface_hub import login, whoami
 
 login(token="hVX")
 print(whoami())
+```
 
 ## Test JavaScript streaming dataset
+```bash
 from datasets import load_dataset
 
 js_stream = load_dataset(
@@ -983,8 +1085,10 @@ sample = next(iter(js_stream))
 
 print(sample.keys())
 print(sample["content"][:1000])
+```
 
 ## Full JavaScript QLoRA training code prepare dataset
+```bash
 from datasets import load_dataset
 
 def quality_filter(sample):
@@ -1039,8 +1143,10 @@ train_dataset = (
 
 first = next(iter(train_dataset))
 print(first["text"][:1000])
+```
 
 ## Load Qwen2.5-Coder with QLoRA
+```bash
 import os
 import torch
 
@@ -1076,8 +1182,10 @@ model = prepare_model_for_kbit_training(
     model,
     use_gradient_checkpointing=True
 )
+```
 
 ## Attach LoRA adapter
+```bash
 peft_config = LoraConfig(
     r=16,
     lora_alpha=32,
@@ -1088,15 +1196,19 @@ peft_config = LoraConfig(
 )
 
 model = get_peft_model(model, peft_config)
+```
 
-# Avoid BF16 gradient issues in Colab
+## Avoid BF16 gradient issues in Colab
+```bash
 for name, param in model.named_parameters():
     if param.requires_grad:
         param.data = param.data.to(torch.float32)
 
 model.print_trainable_parameters()
+```
 
 ## Train on full JavaScript stream
+```bash
 from trl import SFTTrainer, SFTConfig
 
 training_args = SFTConfig(
@@ -1136,15 +1248,19 @@ trainer = SFTTrainer(
 )
 
 trainer.train()
+```
 
 ## Save to Google Drive:
+```bash
 from google.colab import drive
 drive.mount("/content/drive")
 
 trainer.save_model("/content/drive/MyDrive/qwen_javascript_full_lora")
 tokenizer.save_pretrained("/content/drive/MyDrive/qwen_javascript_full_lora")
+```
 
 ## Use the trained JavaScript model
+```bash
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
 import torch
@@ -1174,8 +1290,10 @@ model = PeftModel.from_pretrained(
 )
 
 model.eval()
+```
 
 ## Test
+```bash
 messages = [
     {
         "role": "system",
@@ -1210,8 +1328,10 @@ response = tokenizer.decode(
 )
 
 print(response)
+```
 
 ## Best method: continue from checkpoint
+```bash
 import os, glob
 
 output_dir = "./qwen_javascript_full_lora"
@@ -1223,8 +1343,10 @@ checkpoints = sorted(
 
 print(checkpoints)
 print("Latest checkpoint:", checkpoints[-1] if checkpoints else "No checkpoint found")
+```
 
 ## Continue Process
+```bash
 from trl import SFTTrainer, SFTConfig
 
 training_args = SFTConfig(
@@ -1264,5 +1386,4 @@ trainer = SFTTrainer(
 )
 
 trainer.train(resume_from_checkpoint=True)
-
-## 
+```
